@@ -31,49 +31,78 @@ public class Companions {
         return companionCollection;
     }
 
-    public static int enhancedModulus(double p, double g, double s) {
-        ArrayList<Integer> powsTwo=new ArrayList<>();
-        ArrayList<Integer> powMods=new ArrayList<>();
+    public static long enhancedModulus(long p, long g, long s) {
+        long[] powsTwo=new long[Math.toIntExact(p)];
+        long[] powMods=new long[Math.toIntExact(p)];
         int i=1;
-        double calcLimit=(double) p*p;
+        int j=0;
+        long calcLimit=(long) p*p;
+        int targetMod=3190;
+        boolean foundRightMod=false;
+        long rightMod=0;
 
         //confirm target calc output
         System.out.println("Maximum calculated number: "+calcLimit);
 
-        //construct powers of 2 and corresponding mods
-        do {
-            powsTwo.add((Integer) i);
-            double powMod=(double) (Math.pow(g,i));
-            powMod=powMod%p;
-            powMods.add(powMod);
-            i*=2;
-        } while(i<=p);
+        //get values of g^t mod p
+        long lastMod=1;
+        long[] modCollection=new long[(int) p];
+        for(i=0;i<p;i++) {
+            lastMod=lastMod*g;
+            lastMod=lastMod%p;
+            System.out.println(lastMod);
+            modCollection[i]=lastMod;
+            if(lastMod==targetMod) {
+                foundRightMod=true;
+                rightMod=i+1;
+            }
+        }
 
-        for(i=0;i<powsTwo.size();i++){
-            System.out.println(powsTwo.get(i) +": "+powMods.get(i));
+        //construct powers of 2 and gather corresponding mods
+        i=1;
+        do {
+            powsTwo[j]= i;
+            powMods[j]=modCollection[i-1];
+            System.out.println("This pow2: "+powsTwo[j]);
+            i*=2;
+            j++;
+        } while(i<=p);
+        j--;
+
+        for(i=0;i<j;i++){
+            System.out.println(powsTwo[i] +": "+powMods[i]);
         }
 
         //split s into powers of 2
-        int[] sAsPowerSum=new int[powsTwo.size()];
-        int sLeft=s;
-        String powRecord=s+"as powers of two: ";
-        for(i=powsTwo.size()-1;i>=0;i--) {
-            if(powsTwo.get(i)<sLeft) {
+        long[] sAsPowerSum=new long[powsTwo.length];
+        long sLeft=s;
+        String powRecord=s+" as powers of two: ";
+        for(i=j;i>=0;i--) {
+            if(powsTwo[i]<=sLeft) {
                 sAsPowerSum[i]=1;
-                sLeft-=powsTwo.get(i);
+                sLeft-=powsTwo[i];
+                System.out.println("Power: "+i+", remaining: "+sLeft);
                 powRecord+="2^"+i+" + ";
             } else sAsPowerSum[i]=0;
         }
         System.out.println(powRecord);
 
         //multiply mods together
-        int modProduct=1;
-        for(i=0;i<powsTwo.size();i++) {
-            modProduct=modProduct*powMods.get(i)*sAsPowerSum[i];
+        long modProduct=1;
+        for(i=0;i<j;i++) {
+            System.out.println("modProduct: "+modProduct+", powMods: "+powMods[i]+", powerSum: "+sAsPowerSum[i]);
+            if(sAsPowerSum[i]==1) {
+                modProduct=modProduct*powMods[i];
+                modProduct=modProduct%p;
+            }
             System.out.println("Mod product "+i+": "+modProduct);
         }
 
+        if(foundRightMod) {
+            System.out.println("Found s with the correct mod! It's at power "+rightMod);
+        }
         return modProduct;
+
 
     }
 
@@ -82,6 +111,7 @@ public class Companions {
         //int p=Integer.parseInt(scanner.nextLine());
         ArrayList<Integer> companions=naiveCompanions(11);
 
-        int mod=enhancedModulus(104651,24578,100418);
+        long mod=enhancedModulus(5,2,6);
+        long mod2=enhancedModulus(104651,24578,100418);
     }
 }
