@@ -57,49 +57,39 @@ public class Companions {
     public static long enhancedModulus(long p, long g, long s) {
         long[] powsTwo=new long[Math.toIntExact(p)];
         long[] powMods=new long[Math.toIntExact(p)];
-        int i=1;
-        int j=0;
         long calcLimit=(long) p*p;
-        int targetMod=3190;
-        boolean foundRightMod=false;
-        long rightMod=0;
 
         //confirm target calc output
         System.out.println("Maximum calculated number: "+calcLimit);
 
         //PART C1
-        //get values of g^t mod p
-        long lastMod=1;
-        long[] modCollection=new long[(int) p];
-        for(i=0;i<p;i++) {
-            //multiply previous modulus by g and take mod p
-            lastMod=lastMod*g;
-            lastMod=lastMod%p;
-            System.out.println(lastMod);
-            modCollection[i]=lastMod;
-
-            //PART D)
-            //if modulus is the one we're looking for, store the power it occurred on
-            if(lastMod==targetMod) {
-                foundRightMod=true;
-                rightMod=i+1;
-            }
-        }
-
-        //construct powers of 2 and gather corresponding mods
-        i=1;
+        //construct powers of 2 and generate corresponding mods
+        int i=1;
+        int j=0;
+        long lastMod=0;
         do {
             powsTwo[j]= i;
-            powMods[j]=modCollection[i-1];
-            System.out.println("This pow2: "+powsTwo[j]);
+
+            //Special case for j=0
+            //To run with the pattern, we want lastMod=sqrt(g)
+            //However g might not be a square, so sqrt(g) would not be an integer
+            //instead, just hard code the results for j=0 (or g^1 mod p)
+            if(j==0) {
+                lastMod=g;
+            } else {
+                //Square previous modulus and take mod p
+                lastMod=lastMod*lastMod;
+                lastMod=lastMod%p;
+            }
+            powMods[j]=lastMod;
+
+            //output
+            System.out.println("t: "+i+", g^t mod p: "+lastMod);
+
             i*=2;
             j++;
         } while(i<=p);
-        j--;
-
-        for(i=0;i<j;i++){
-            System.out.println(powsTwo[i] +": "+powMods[i]);
-        }
+        j--;//point j to the last element in powsTwo and powMods
 
         //PART C2
         //split s into powers of 2
@@ -111,7 +101,6 @@ public class Companions {
             if(powsTwo[i]<=sLeft) {
                 sAsPowerSum[i]=1;
                 sLeft-=powsTwo[i];
-                System.out.println("Power: "+i+", remaining: "+sLeft);
                 powRecord+="2^"+i+" + ";
             } else sAsPowerSum[i]=0;
         }
@@ -120,36 +109,66 @@ public class Companions {
         //PART C4
         //multiply mods together
         long modProduct=1;
+        int c=0;
         for(i=0;i<j;i++) {
-            System.out.println("modProduct: "+modProduct+", powMods: "+powMods[i]+", powerSum: "+sAsPowerSum[i]);
             //For elements that make up s (in binary),multiply together the mods and take %p each time
             if(sAsPowerSum[i]==1) {
                 modProduct=modProduct*powMods[i];
                 modProduct=modProduct%p;
-                System.out.println("Modulus at iteration "+i+1+": "+modProduct);
+                c++;
+                System.out.println("Modulus at iteration "+c+": "+modProduct);
             }
-            System.out.println("Mod product "+i+": "+modProduct);
         }
-
-        //finally square and take mod p to find the final value
-        modProduct*=modProduct;
-        modProduct=modProduct%p;
-
-
-        if(foundRightMod) {
-            System.out.println("Found s with the correct mod! It's at power "+rightMod);
-        }
+        System.out.println("Final result: "+modProduct);
         return modProduct;
+    }
 
+    /**PART D)
+     *
+     * Produces a list of moduli for powers of g, to find the power that produces the target modulus.
+     * @param g - integer to take powers of
+     * @param p - take mod relative to this integer
+     * @param targetMod - the modulus to search for
+     * @return an integer representing the power of g where g^returnValue mod p =targetMod, or -1 if the targetMod was not found
+     */
+    public static int findTargetMod(long g, long p, long targetMod) {
 
+        long lastMod=1;
+        for(int i=0;i<p;i++) {
+            //multiply previous modulus by g and take mod p
+            lastMod=lastMod*g;
+            lastMod=lastMod%p;
+
+            //if modulus is the one we're looking for, store the power it occurred on
+            if(lastMod==targetMod) {
+                System.out.println("Found s with the correct mod! It's at power "+(i+1));
+                return i+1;
+            }
+        }
+        System.out.println("Target mod not found");
+        return -1;
+    }
+
+    public static void testRun() {
+        //Testing procedure
+        //got expected results for everything, so it's all working!
+        ArrayList<Integer> companions=naiveCompanions(5);
+        System.out.println("Check 2 is a companion");
+        long mod=enhancedModulus(5,2,1);//output 2
+        mod=enhancedModulus(5,2,2);//output 4
+        mod=enhancedModulus(5,2,3);//output 3
+        mod=enhancedModulus(5,2,4);//output 1
+        System.out.println("Check 3 is a companion");
+        mod=enhancedModulus(5,3,1);//output 3
+        mod=enhancedModulus(5,3,2);//output 4
+        mod=enhancedModulus(5,3,3);//output 2
+        mod=enhancedModulus(5,3,4);//output 1
     }
 
     public static void main(String[] args) {
-        Scanner scanner=new Scanner(System.in);
-        //int p=Integer.parseInt(scanner.nextLine());
+        //testRun();
         ArrayList<Integer> companions=naiveCompanions(11);
-
-        //long mod=enhancedModulus(5,2,6);
-        //long mod2=enhancedModulus(104651,24578,100418);
+        long mod2=enhancedModulus(104651,24578,100418);
+        int targetPow=findTargetMod(24578,104651,3190);
     }
 }
